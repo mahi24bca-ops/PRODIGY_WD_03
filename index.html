@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tic-Tac-Toe</title>
+
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:"Poppins",sans-serif;
+}
+
+body{
+  background:linear-gradient(135deg,#eef3ff,#ffffff);
+  color:#333;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
+
+/* Box */
+.game-wrap{
+  padding:25px;
+  width:90%;
+  max-width:420px;
+  text-align:center;
+  border-radius:20px;
+  background:#ffffffdd;
+  backdrop-filter:blur(12px);
+  box-shadow:0 4px 25px rgba(0,0,0,0.12);
+  border:1px solid #d9e4ff;
+}
+
+h1{
+  font-size:32px;
+  margin-bottom:10px;
+  color:#4a6cff;
+}
+
+/* X/O buttons */
+.choice-area{
+  display:flex;
+  justify-content:center;
+  gap:25px;
+  margin:15px 0;
+}
+.choice-area button{
+  background:#f0f4ff;
+  color:#4a6cff;
+  padding:10px 25px;
+  border:none;
+  font-size:20px;
+  border-radius:10px;
+  box-shadow:0 0 6px #d0dbff;
+  cursor:pointer;
+  transition:0.25s;
+  border:1px solid #cdd9ff;
+}
+.choice-area button:hover{
+  transform:scale(1.12);
+  background:#4a6cff;
+  color:white;
+}
+
+/* Board container */
+.board-wrap{
+  position:relative;
+  width:fit-content;
+  margin:0 auto;
+}
+
+/* Board grid */
+.board{
+  margin:20px auto;
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+}
+.cell{
+  width:100px;
+  height:100px;
+  background:#f7f9ff;
+  border-radius:12px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-size:48px;
+  color:#4a6cff;
+  cursor:pointer;
+  transition:0.2s;
+  box-shadow:inset 0 0 5px #cfd9ff;
+  border:1px solid #d6e0ff;
+}
+.cell:hover{
+  transform:scale(1.06);
+  background:#eaf0ff;
+  box-shadow:inset 0 0 10px #b8c6ff;
+}
+
+/* Strike line */
+.strike{
+  position:absolute;
+  height:6px;
+  background:#ff6b81;
+  box-shadow:0 0 12px #ff6b81;
+  border-radius:6px;
+  display:none;
+  transition:0.3s ease;
+}
+
+/* Restart button */
+.restart-btn{
+  padding:12px 30px;
+  border:none;
+  margin-top:15px;
+  border-radius:12px;
+  background:#f3f5ff;
+  color:#4a6cff;
+  cursor:pointer;
+  font-size:18px;
+  box-shadow:0 0 8px #d6e1ff;
+  transition:0.25s;
+  border:1px solid #dbe4ff;
+}
+.restart-btn:hover{
+  transform:scale(1.12);
+  background:#4a6cff;
+  color:white;
+}
+</style>
+</head>
+
+<body>
+
+<div class="game-wrap">
+  <h1>Light Tic Tac Toe</h1>
+
+  <div class="choice-area">
+    <button onclick="selectMark('X')">X</button>
+    <button onclick="selectMark('O')">O</button>
+  </div>
+
+  <p id="status">Choose X or O to begin</p>
+
+  <div class="board-wrap">
+    <div id="board" class="board"></div>
+    <div id="strike" class="strike"></div>
+  </div>
+
+  <button class="restart-btn" onclick="resetGame()">Restart</button>
+</div>
+
+<script>
+let human=null, ai=null, currentPlayer=null;
+let board=["","","","","","","","",""];
+let gameOver=false;
+
+const boardEl=document.getElementById("board");
+const strike=document.getElementById("strike");
+
+/* Create 9 cells */
+for(let i=0;i<9;i++){
+  let c=document.createElement("div");
+  c.classList.add("cell");
+  c.dataset.index=i;
+  c.onclick=()=>userMove(i);
+  boardEl.appendChild(c);
+}
+
+function selectMark(m){
+  human=m;
+  ai=m==="X"?"O":"X";
+  currentPlayer=human;
+  document.getElementById("status").innerText="Your turn!";
+}
+
+function userMove(i){
+  if(!human||gameOver) return;
+  if(board[i]!="") return;
+
+  board[i]=human;
+  renderBoard();
+
+  if(checkWin(human)){ endGame(human); return; }
+  if(isFull()){ drawGame(); return; }
+
+  currentPlayer=ai;
+  document.getElementById("status").innerText="AI thinking...";
+  setTimeout(aiMove,450);
+}
+
+function aiMove(){
+  if(gameOver) return;
+
+  let empties=board.map((v,i)=>v==""?i:null).filter(v=>v!=null);
+  let move=empties[Math.floor(Math.random()*empties.length)];
+  board[move]=ai;
+
+  renderBoard();
+
+  if(checkWin(ai)){ endGame(ai); return; }
+  if(isFull()){ drawGame(); return; }
+
+  currentPlayer=human;
+  document.getElementById("status").innerText="Your turn!";
+}
+
+function renderBoard(){
+  document.querySelectorAll(".cell").forEach((c,i)=>c.textContent=board[i]);
+}
+
+const winPatterns=[
+  [0,1,2],[3,4,5],[6,7,8],
+  [0,3,6],[1,4,7],[2,5,8],
+  [0,4,8],[2,4,6]
+];
+
+function checkWin(p){
+  return winPatterns.find(w=>board[w[0]]==p && board[w[1]]==p && board[w[2]]==p);
+}
+
+function isFull(){
+  return board.every(v=>v!="");
+}
+
+/* Strike line calc */
+function showStrike(pattern){
+  const cells=[...document.querySelectorAll(".cell")];
+
+  const [a,,c]=pattern;
+
+  const rectA=cells[a].getBoundingClientRect();
+  const rectC=cells[c].getBoundingClientRect();
+  const wrapRect=document.querySelector(".board-wrap").getBoundingClientRect();
+
+  const x1=rectA.left - wrapRect.left + rectA.width/2;
+  const y1=rectA.top - wrapRect.top + rectA.height/2;
+
+  const x2=rectC.left - wrapRect.left + rectC.width/2;
+  const y2=rectC.top - wrapRect.top + rectC.height/2;
+
+  const len=Math.sqrt((x2-x1)**2 + (y2-y1)**2);
+  const angle=Math.atan2(y2-y1,x2-x1)*180/Math.PI;
+
+  strike.style.display="block";
+  strike.style.width=len+"px";
+  strike.style.left=x1+"px";
+  strike.style.top=y1+"px";
+  strike.style.transform=`translateY(-50%) rotate(${angle}deg)`;
+}
+
+function endGame(p){
+  gameOver=true;
+  document.getElementById("status").innerText=p+" wins!";
+  showStrike(checkWin(p));
+}
+
+function drawGame(){
+  gameOver=true;
+  document.getElementById("status").innerText="It's a draw!";
+}
+
+function resetGame(){
+  board=["","","","","","","","",""];
+  gameOver=false;
+  human=null;
+  ai=null;
+  currentPlayer=null;
+  strike.style.display="none";
+  document.getElementById("status").innerText="Choose X or O to begin";
+  renderBoard();
+}
+</script>
+
+</body>
+</html>
